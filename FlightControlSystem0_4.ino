@@ -143,11 +143,11 @@ int yawImbalanceCycles = 0;
 // How often do we correct imbalance
 int pitchCorrectionPeriod = 10;
 int rollCorrectionPeriod = 10;
-int yawCorrectionPeriod = 50;
+int yawCorrectionPeriod = 10;
 
 // deviation of yaw that is considered standard
-float pitchSensitivity = 0.02;
-float rollSensitivity = 0.02;
+float pitchSensitivity = 0.03;
+float rollSensitivity = 0.03;
 float yawSensitivity = 0.03;
 
 void getGyroData() {
@@ -160,31 +160,45 @@ void getGyroData() {
   float gyro_z = gyro_event.gyro.z + 0.02;
   if (sendGyroscopeData){
     Serial.print(millis());  Serial.print(": Gyroscope: ");
-    Serial.print("X: "); Serial.print(gyro_x); Serial.print(" rad/s ");
-    Serial.print("Y: "); Serial.print(gyro_y); Serial.print(" rad/s ");
-    Serial.print("Z: "); Serial.print(gyro_z); Serial.print(" rad/s ");
+    Serial.print("\tX: "); Serial.print(gyro_x);// Serial.print(" rad/s ");
+    Serial.print(" \tY: "); Serial.print(gyro_y);// Serial.print(" rad/s ");
+    Serial.print(" \tZ: "); Serial.print(gyro_z);// Serial.print(" rad/s ");
+    Serial.print(" \tRT: "); Serial.print(PWMValue_RT + offset_RT);
+    Serial.print("\tLT: "); Serial.print(PWMValue_LT + offset_LT);
+    Serial.print("\tTT: "); Serial.print(PWMValue_TT + offset_TT);
+    Serial.print("\tRB: "); Serial.print(PWMValue_RB + offset_RB);
+    Serial.print("\tLB: "); Serial.print(PWMValue_LB + offset_LB);
+    Serial.print("\tTB: "); Serial.print(PWMValue_TB + offset_TB);
+    Serial.print("\tYP: "); Serial.print(yawCorrectionPeriod);
+    Serial.print("\tYS: "); Serial.print(yawSensitivity);
     Serial.println("");
   }
 
-  if (gyro_x > rollSensitivity){
-    rollImbalanceCycles ++;
-  }
-  else if (gyro_x < -rollSensitivity){
-    rollImbalanceCycles --;
+  if (enableRollBalance) {
+    if (gyro_x > rollSensitivity){
+      rollImbalanceCycles ++;
+    }
+    else if (gyro_x < -rollSensitivity){
+      rollImbalanceCycles --;
+    }
   }
   
-  if (gyro_y > pitchSensitivity){
-    pitchImbalanceCycles ++;
+  if (enablePitchBalance) {
+    if (gyro_y > pitchSensitivity){
+      pitchImbalanceCycles ++;
+    }
+    else if (gyro_y < -pitchSensitivity){
+      pitchImbalanceCycles --;
+    }
   }
-  else if (gyro_y < -pitchSensitivity){
-    pitchImbalanceCycles --;
-  }
-
-  if (gyro_z > yawSensitivity){
-    yawImbalanceCycles ++;
-  }
-  else if (gyro_z < -yawSensitivity){
-    yawImbalanceCycles --;
+  
+  if (enableYawBalance) {
+    if (gyro_z > yawSensitivity){
+      yawImbalanceCycles ++;
+    }
+    else if (gyro_z < -yawSensitivity){
+      yawImbalanceCycles --;
+    }
   }
 
 }
@@ -210,9 +224,6 @@ void balanceOffset(){
     }
     else if (yawImbalanceCycles < -yawCorrectionPeriod) {
       yawImbalanceCycles += yawCorrectionPeriod;
-      // Go to previous of 3 props
-      bottomProp = (bottomProp + 2) % 3;
-
       // Change offset on needed prop
       if (bottomProp == 0){
         offset_TB --;
@@ -223,6 +234,9 @@ void balanceOffset(){
       else if (bottomProp == 2) {
         offset_LB --; 
       }
+
+      // Go to previous of 3 props
+      bottomProp = (bottomProp + 2) % 3;
     }
   }
 
@@ -415,6 +429,15 @@ void loop() {
       case 'C': enableRollBalance = !enableRollBalance; break;
       case 'v':
       case 'V': enableYawBalance = !enableYawBalance; break;
+      case 'b':
+      case 'B': if (yawCorrectionPeriod > 1) yawCorrectionPeriod --; break; 
+      case 'n':
+      case 'N': yawCorrectionPeriod ++; break;
+      case 'h':
+      case 'H': if (yawSensitivity > 0.01) yawSensitivity -=0.01; break; 
+      case 'j':
+      case 'J': yawSensitivity +=0.01; break;
+
       default:                  break;
     }
   }
