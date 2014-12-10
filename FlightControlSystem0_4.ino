@@ -71,7 +71,7 @@ void initSensors()
 }
 
 // Not used in the current system due to problems with accelerometer
-/*void getSensorData(){
+void getSensorData(){
   sensors_event_t accel_event;
   sensors_event_t mag_event;
   sensors_event_t bmp_event;
@@ -99,7 +99,7 @@ void initSensors()
     Serial.print(F("; "));
   }
 }
-*/
+
 
 // PWMValue_base is the one that we control programatically
 int PWMValue_base = 10;
@@ -386,6 +386,7 @@ void log_pwm(){
   Serial.println(PWMValue_LB + offset_LB);
   Serial.print("PWMValue TB = "); 
   Serial.println(PWMValue_TB + offset_TB);
+  getSensorData();
 }
 
 void loop() {
